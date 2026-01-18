@@ -18,6 +18,22 @@
 
 ---
 
+## 🚨 Coming Soon: MyOS v2.0 with Native AI!
+
+> **We're building the world's first hobby OS with built-in LLM inference.**
+
+```
+myos> ai tell me a story about a robot
+
+🤖 Once upon a time, there was a little robot named Chip...
+```
+
+No CUDA. No PyTorch. No Python. Just bare-metal C running a neural network directly on your CPU.
+
+**[📋 Read the full v2.0 Roadmap →](ROADMAP.md)**
+
+---
+
 ## ✨ What is this?
 
 MyOS is a **primitive operating system** built completely from scratch. No Linux kernel. No GRUB. Just a bootloader written in x86 assembly that switches to protected mode and loads a kernel written in C.
