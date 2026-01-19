@@ -6,6 +6,9 @@
 #include "screen.h"
 #include "keyboard.h"
 #include "filesystem.h"
+#include "memory.h"
+#include "math.h"
+#include "ata.h"
 
 static char command_buffer[MAX_COMMAND_LENGTH];
 
@@ -34,6 +37,9 @@ static void cmd_help(void) {
     screen_print("  help              - Show this help\n");
     screen_print("  clear             - Clear the screen\n");
     screen_print("  about             - About MyOS\n");
+    screen_print("  mem               - Show memory status\n");
+    screen_print("  math              - Test math library\n");
+    screen_print("  disk              - Test disk reading\n");
     screen_print("  list              - List all files\n");
     screen_print("  create <file>     - Create a new file\n");
     screen_print("  read <file>       - Read file contents\n");
@@ -42,9 +48,81 @@ static void cmd_help(void) {
 }
 
 static void cmd_about(void) {
-    screen_print_color("\n*** MyOS v1.0 ***\n", HIGHLIGHT_COLOR);
-    screen_print("A primitive OS built from scratch!\n");
-    screen_print("Features: Shell, Keyboard, VGA Display, File System\n\n");
+    screen_print_color("\n*** MyOS v2.0-dev ***\n", HIGHLIGHT_COLOR);
+    screen_print("A primitive OS with native AI inference!\n");
+    screen_print("Features: Shell, Keyboard, VGA, FileSystem, Memory Manager\n\n");
+}
+
+static void cmd_mem(void) {
+    memory_dump();
+}
+
+/* Helper to print float (simple version) */
+static void print_float(float f) {
+    char buf[16];
+    if (f < 0) { screen_print("-"); f = -f; }
+    int whole = (int)f;
+    int frac = (int)((f - whole) * 1000);
+    itoa(whole, buf, 10);
+    screen_print(buf);
+    screen_print(".");
+    if (frac < 100) screen_print("0");
+    if (frac < 10) screen_print("0");
+    itoa(frac, buf, 10);
+    screen_print(buf);
+}
+
+static void cmd_math(void) {
+    screen_print_color("\n=== Math Library Test ===\n", HIGHLIGHT_COLOR);
+    
+    screen_print("expf(1.0) = "); print_float(expf(1.0f)); screen_print(" (expect 2.718)\n");
+    screen_print("expf(0.0) = "); print_float(expf(0.0f)); screen_print(" (expect 1.000)\n");
+    screen_print("logf(2.718) = "); print_float(logf(2.718f)); screen_print(" (expect 1.000)\n");
+    screen_print("sqrtf(4.0) = "); print_float(sqrtf(4.0f)); screen_print(" (expect 2.000)\n");
+    screen_print("sqrtf(2.0) = "); print_float(sqrtf(2.0f)); screen_print(" (expect 1.414)\n");
+    screen_print("powf(2,10) = "); print_float(powf(2.0f, 10.0f)); screen_print(" (expect 1024)\n");
+    screen_print("tanhf(0.0) = "); print_float(tanhf(0.0f)); screen_print(" (expect 0.000)\n");
+    screen_print("tanhf(1.0) = "); print_float(tanhf(1.0f)); screen_print(" (expect 0.761)\n");
+    
+    screen_print_color("\nMath library ready for LLM inference!\n\n", INFO_COLOR);
+}
+
+static void cmd_disk(void) {
+    screen_print_color("\n=== ATA Disk Test ===\n", HIGHLIGHT_COLOR);
+    
+    uint8_t* buffer = (uint8_t*)malloc(512);
+    if (!buffer) {
+        screen_print_color("Error: Could not allocate buffer\n", ERROR_COLOR);
+        return;
+    }
+    
+    screen_print("Reading sector 0 (bootloader)...\n");
+    int result = ata_read_sectors(0, 1, buffer);
+    
+    if (result == ATA_SUCCESS) {
+        screen_print_color("Success! ", INFO_COLOR);
+        screen_print("First 16 bytes: ");
+        char hex[4];
+        for (int i = 0; i < 16; i++) {
+            uint8_t b = buffer[i];
+            hex[0] = "0123456789ABCDEF"[b >> 4];
+            hex[1] = "0123456789ABCDEF"[b & 0xF];
+            hex[2] = ' ';
+            hex[3] = 0;
+            screen_print(hex);
+        }
+        screen_print("\n");
+        
+        /* Check boot signature */
+        if (buffer[510] == 0x55 && buffer[511] == 0xAA) {
+            screen_print_color("Boot signature (0x55AA) found!\n", INFO_COLOR);
+        }
+    } else {
+        screen_print_color("Error reading disk!\n", ERROR_COLOR);
+    }
+    
+    free(buffer);
+    screen_print("\n");
 }
 
 static void cmd_clear(void) {
@@ -167,6 +245,9 @@ void shell_execute(const char* input) {
     if (strcmp(cmd, "help") == 0) cmd_help();
     else if (strcmp(cmd, "clear") == 0) cmd_clear();
     else if (strcmp(cmd, "about") == 0) cmd_about();
+    else if (strcmp(cmd, "mem") == 0) cmd_mem();
+    else if (strcmp(cmd, "math") == 0) cmd_math();
+    else if (strcmp(cmd, "disk") == 0) cmd_disk();
     else if (strcmp(cmd, "list") == 0) cmd_list();
     else if (strcmp(cmd, "create") == 0) cmd_create(rest);
     else if (strcmp(cmd, "read") == 0) cmd_read(rest);

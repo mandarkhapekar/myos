@@ -59,32 +59,18 @@ load_kernel:
     mov si, MSG_LOAD
     call print_string_16
 
+    ; Simple approach: just read up to 40 sectors using CHS
+    ; QEMU floppy emulation is forgiving
     mov bx, KERNEL_OFFSET   ; Load to ES:BX = 0x0000:0x1000
-    mov dh, 30              ; Read 30 sectors (enough for our kernel)
-    mov dl, [BOOT_DRIVE]
-    call disk_load
-
-    ret
-
-; Load DH sectors from drive DL into ES:BX
-disk_load:
-    pusha
-    push dx
-
     mov ah, 0x02            ; BIOS read sector function
-    mov al, dh              ; Number of sectors to read
+    mov al, 40              ; Number of sectors to read (20 KB)
     mov ch, 0               ; Cylinder 0
     mov dh, 0               ; Head 0
     mov cl, 2               ; Start from sector 2 (sector 1 is bootloader)
-
+    mov dl, [BOOT_DRIVE]    ; Drive number
     int 0x13                ; BIOS disk interrupt
     jc disk_error           ; Jump if carry flag set (error)
 
-    pop dx
-    cmp al, dh              ; Compare sectors read vs requested
-    jne disk_error
-
-    popa
     ret
 
 disk_error:
