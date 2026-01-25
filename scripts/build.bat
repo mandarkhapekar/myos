@@ -14,6 +14,9 @@ echo           MyOS Build Script
 echo ============================================
 echo.
 
+REM Navigate to project root
+pushd %~dp0\..
+
 REM Create build directory
 if not exist build mkdir build
 

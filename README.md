@@ -84,16 +84,22 @@ myos> help
 
 ### Build & Run
 
+**On macOS:**
+```bash
+./scripts/build_mac.sh
+./scripts/run_mac.sh
+```
+
 **On WSL/Linux:**
 ```bash
-./build_wsl.sh
+./scripts/build_wsl.sh
 qemu-system-i386 -fda build/os-image.bin
 ```
 
 **On Windows (with WSL for building):**
 ```cmd
-wsl ./build_wsl.sh
-.\run.bat
+wsl ./scripts/build_wsl.sh
+.\scripts\run.bat
 ```
 
 ---
@@ -123,8 +129,12 @@ myos/
 │   ├── keyboard.c        # ⌨️ Keyboard driver
 │   ├── filesystem.c      # 📁 Simple file system
 │   └── shell.c           # 💻 Command shell
-├── build_wsl.sh          # 🔨 Build script
-└── run.bat               # ▶️ Run in QEMU
+├── scripts/
+│   ├── build_mac.sh      # 🔨 Build script (macOS)
+│   ├── build_wsl.sh      # 🔨 Build script (WSL/Linux)
+│   ├── run_mac.sh        # ▶️ Run script (macOS)
+│   └── run.bat           # ▶️ Run script (Windows)
+└── build/                # 📦 Build artifacts
 ```
 
 ---
