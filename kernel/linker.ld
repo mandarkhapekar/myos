@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x1000;
+    . = 0x10000;
     
     .text : {
         *(.text)
@@ -17,5 +17,8 @@ SECTIONS {
     
     .bss : {
         *(.bss)
+        *(COMMON)
     }
+
+    _kernel_end = .;
 }

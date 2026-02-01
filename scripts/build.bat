@@ -91,6 +91,9 @@ exit /b 1
 %CC% -ffreestanding -m32 -c kernel\keyboard.c -o build\keyboard.o -fno-pie -fno-stack-protector
 %CC% -ffreestanding -m32 -c kernel\filesystem.c -o build\filesystem.o -fno-pie -fno-stack-protector
 %CC% -ffreestanding -m32 -c kernel\shell.c -o build\shell.o -fno-pie -fno-stack-protector
+%CC% -ffreestanding -m32 -c kernel\memory.c -o build\memory.o -fno-pie -fno-stack-protector
+%CC% -ffreestanding -m32 -c kernel\math.c -o build\math.o -fno-pie -fno-stack-protector
+%CC% -ffreestanding -m32 -c kernel\ata.c -o build\ata.o -fno-pie -fno-stack-protector
 
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Failed to compile kernel!
@@ -99,7 +102,7 @@ if %ERRORLEVEL% neq 0 (
 echo       Done!
 
 echo [4/5] Linking kernel...
-%LD% -o build\kernel.bin -T kernel\linker.ld build\kernel_entry.o build\kernel.o build\screen.o build\keyboard.o build\filesystem.o build\shell.o --oformat binary -m elf_i386
+%LD% -o build\kernel.bin -T kernel\linker.ld build\kernel_entry.o build\kernel.o build\screen.o build\keyboard.o build\filesystem.o build\shell.o build\memory.o build\math.o build\ata.o --oformat binary -m elf_i386
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Failed to link kernel!
     exit /b 1
@@ -122,7 +125,7 @@ echo.
 echo Output: build\os-image.bin
 echo.
 echo To run in QEMU:
-echo   qemu-system-i386 -fda build\os-image.bin
+echo   qemu-system-i386 -hda build\os-image.bin
 echo.
 echo To run in VirtualBox:
 echo   1. Create new VM (Type: Other, Version: Other/Unknown)

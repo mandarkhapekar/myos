@@ -11,7 +11,8 @@
 [bits 16]
 [org 0x7C00]
 
-KERNEL_OFFSET equ 0x1000    ; Memory offset where we'll load the kernel
+KERNEL_OFFSET equ 0x10000   ; 64KB mark (safe from bootloader overwrite)
+                                ; Matches linker.ld address
 
 ; Entry point
 start:
@@ -54,26 +55,57 @@ print_string_16:
     popa
     ret
 
-; Load kernel from disk
 load_kernel:
     mov si, MSG_LOAD
     call print_string_16
 
-    ; Simple approach: just read up to 40 sectors using CHS
-    ; QEMU floppy emulation is forgiving
-    mov bx, KERNEL_OFFSET   ; Load to ES:BX = 0x0000:0x1000
-    mov ah, 0x02            ; BIOS read sector function
-    mov al, 40              ; Number of sectors to read (20 KB)
-    mov ch, 0               ; Cylinder 0
-    mov dh, 0               ; Head 0
-    mov cl, 2               ; Start from sector 2 (sector 1 is bootloader)
-    mov dl, [BOOT_DRIVE]    ; Drive number
-    int 0x13                ; BIOS disk interrupt
-    jc disk_error           ; Jump if carry flag set (error)
+    ; Reset disk system (good practice)
+    mov ah, 0
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    
+    ; Check if LBA is supported
+    mov ah, 0x41
+    mov bx, 0x55AA
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc lba_error            ; LBA not supported
+    
+    ; Setup Disk Address Packet (DAP)
+    mov word [dap_size], 0x0010
+    mov word [dap_count], 127
+    mov word [dap_offset], 0x0000       ; Offset 0
+    mov word [dap_segment], 0x1000      ; Segment 0x1000 (Physical: 0x10000)
+    mov dword [dap_lba], 1
+    mov dword [dap_lba_high], 0
 
+    mov si, dap_size
+    mov ah, 0x42
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc read_error
+    
     ret
 
-disk_error:
+dap_size:       db 0x10
+dap_reserved:   db 0x00
+dap_count:      dw 0x0000
+dap_offset:     dw 0x0000
+dap_segment:    dw 0x0000
+dap_lba:        dd 0x00000000
+dap_lba_high:   dd 0x00000000
+
+lba_error:
+    mov si, MSG_LBA_ERR
+    call print_string_16
+    jmp $
+
+read_error:
+    mov si, MSG_READ_ERR
+    call print_string_16
+    jmp $
+    
+disk_error:                 ; Kept for other generic errors if needed
     mov si, MSG_DISK_ERR
     call print_string_16
     jmp $
@@ -181,7 +213,9 @@ print_string_32:
 BOOT_DRIVE:     db 0
 MSG_BOOT:       db "MyOS Bootloader started...", 13, 10, 0
 MSG_LOAD:       db "Loading kernel...", 13, 10, 0
-MSG_DISK_ERR:   db "Disk read error!", 0
+MSG_DISK_ERR:   db "Disk error!", 0
+MSG_LBA_ERR:    db "LBA not supported!", 0
+MSG_READ_ERR:   db "Read error!", 0
 MSG_PMODE:      db "Entered 32-bit Protected Mode", 0
 
 ; ============================================================================
